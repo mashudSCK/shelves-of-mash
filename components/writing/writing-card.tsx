@@ -14,6 +14,8 @@ export function WritingCard({
   className?: string;
   priority?: boolean;
 }) {
+  const shelfName = writing.shelf?.name ?? 'Shelf';
+
   return (
     <Link
       href={`/writing/${writing.slug}`}
@@ -46,7 +48,7 @@ export function WritingCard({
 
       <div className="flex flex-1 flex-col gap-2 p-4">
         <span className="text-2xs uppercase tracking-widest2 text-accent">
-          {writing.shelf.name}
+          {shelfName}
         </span>
         <h3 className="break-words font-serif text-lg font-medium leading-snug text-foreground group-hover:text-accent">
           {writing.title}

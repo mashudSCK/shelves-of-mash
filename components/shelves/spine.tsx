@@ -20,6 +20,7 @@ function tintForId(id: string) {
 
 export function Spine({ writing }: { writing: WritingCardData }) {
   const tint = tintForId(writing.id);
+  const shelfName = writing.shelf?.name ?? 'Shelf';
 
   return (
     <Link
@@ -31,7 +32,7 @@ export function Spine({ writing }: { writing: WritingCardData }) {
       title={writing.title}
     >
       <span className="text-2xs uppercase tracking-widest2 opacity-70">
-        {writing.shelf.name.slice(0, 12)}
+        {shelfName.slice(0, 12)}
       </span>
 
       <span
