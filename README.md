@@ -9,7 +9,7 @@ Tailwind CSS, and Supabase.
 
 - Reader home, shelves, archive, full-text search, bookmarks, and long-form writing pages
 - Interactive Atlas connecting published writings to shelves and tags
-- Passwordless Supabase authentication with reader and administrator roles
+- Supabase authentication with Google OAuth, email magic links, reader roles, and administrator roles
 - Responsive admin workspace for drafts, scheduled posts, publishing, archiving, and shelves
 - Supabase Storage cover uploads with type and size validation
 - Secure Markdown rendering with GFM tables, task lists, code blocks, and image captions
@@ -76,23 +76,30 @@ Open `http://localhost:3000`.
 
 ## Authentication production setup
 
-The default Supabase email service is intended only for development and has strict
-limits. Before launch:
+Google OAuth avoids Supabase's default email rate limit for most sign-ins. Email
+magic links remain available as a fallback, but the default Supabase email service
+is intended only for development and has strict limits. Before launch:
 
 1. In Supabase, open **Authentication > URL Configuration**.
 2. Set the production Site URL and add local/preview callback URLs such as
    `http://localhost:3000/auth/callback`.
-3. Open **Authentication > Emails > SMTP Settings** and configure a transactional
+3. In Google Cloud Console, create an OAuth client for a web application.
+4. Add your Supabase OAuth callback URL to Google's authorized redirect URIs:
+   `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback`.
+5. In Supabase, open **Authentication > Sign In / Providers > Google**, enable it,
+   and enter the Google client ID and client secret.
+6. Open **Authentication > Emails > SMTP Settings** and configure a transactional
    provider such as Amazon SES, Postmark, Resend, or SendGrid.
-4. Disable link tracking in the SMTP provider so magic links are not rewritten.
-5. Review **Authentication > Rate Limits** after SMTP is enabled.
-6. Keep OTP expiry at one hour or less and enable CAPTCHA if sign-in abuse appears.
+7. Disable link tracking in the SMTP provider so magic links are not rewritten.
+8. Review **Authentication > Rate Limits** after SMTP is enabled.
+9. Keep OTP expiry at one hour or less and enable CAPTCHA if sign-in abuse appears.
 
 ## Scheduled publishing
 
-`vercel.json` invokes `/api/cron/publish-scheduled` every five minutes. Vercel sends
-`CRON_SECRET` as a bearer token when that environment variable is configured.
-Scheduled publication runs only on production deployments.
+`vercel.json` invokes `/api/cron/publish-scheduled` once per day on Vercel Hobby.
+Upgrade Vercel and change the cron expression if scheduled posts need to publish
+more frequently. Vercel sends `CRON_SECRET` as a bearer token when that environment
+variable is configured. Scheduled publication runs only on production deployments.
 
 For local testing:
 

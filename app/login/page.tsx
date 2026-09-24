@@ -46,6 +46,24 @@ export default function LoginPage() {
     setStatus('sent');
   }
 
+  async function handleGoogleSignIn() {
+    setStatus('sending');
+    setErrorMessage('');
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      },
+    });
+
+    if (error) {
+      setErrorMessage(error.message);
+      console.error('Supabase Google sign-in error:', error);
+      setStatus('error');
+    }
+  }
+
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-sm flex-col justify-center px-4 py-16">
       <p className="text-2xs uppercase tracking-widest2 text-accent">Welcome back</p>
@@ -75,33 +93,51 @@ export default function LoginPage() {
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-          <div>
-            <label htmlFor="email" className="mb-1.5 block text-sm text-foreground">Email</label>
-            <input
-              id="email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@example.com"
-              className="w-full rounded-md border border-border bg-surface px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus-visible:border-accent"
-            />
-          </div>
+        <div className="mt-8 space-y-5">
           <button
-            type="submit"
+            type="button"
             disabled={status === 'sending'}
-            className="w-full rounded-md bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+            onClick={handleGoogleSignIn}
+            className="flex w-full items-center justify-center gap-3 rounded-md border border-border bg-surface px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60"
           >
-            {status === 'sending' ? 'Sending link...' : 'Send sign-in link'}
+            <span aria-hidden="true" className="text-base font-semibold">G</span>
+            Continue with Google
           </button>
+
+          <div className="flex items-center gap-3 text-2xs uppercase tracking-widest2 text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            <span>Email link</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="email" className="mb-1.5 block text-sm text-foreground">Email</label>
+              <input
+                id="email"
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@example.com"
+                className="w-full rounded-md border border-border bg-surface px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus-visible:border-accent"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={status === 'sending'}
+              className="w-full rounded-md bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+            >
+              {status === 'sending' ? 'Sending...' : 'Send sign-in link'}
+            </button>
+          </form>
           {status === 'error' && (
             <p role="alert" className="text-sm text-red-600 dark:text-red-400">
               {errorMessage || 'Something went wrong sending the link. Please try again.'}
             </p>
           )}
-        </form>
+        </div>
       )}
     </div>
   );
