@@ -4,15 +4,11 @@ import { SpineShelfRow } from '@/components/shelves/spine';
 import { WritingCard } from '@/components/writing/writing-card';
 import { getShelfBySlug, getWritingsByShelf } from '@/lib/data/writings';
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 
 type ShelfPageProps = {
   params: Promise<{ slug: string }>;
 };
-
-export async function generateStaticParams() {
-  return [];
-}
 
 export async function generateMetadata({
   params,

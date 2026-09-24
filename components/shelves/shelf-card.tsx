@@ -6,6 +6,7 @@ export function ShelfCard({ shelf, count }: { shelf: Shelf; count: number }) {
   return (
     <Link
       href={`/shelves/${shelf.slug}`}
+      prefetch={false}
       className="group flex flex-col justify-between gap-3 rounded-md border border-border bg-surface p-5 transition-colors hover:border-accent/60"
     >
       <div className="flex items-start justify-between gap-2">
