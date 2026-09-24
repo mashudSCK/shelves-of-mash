@@ -48,10 +48,13 @@ supabase/migrations/0001_initial_schema.sql
 supabase/migrations/0002_seed_shelves.sql
 supabase/migrations/0003_fix_new_user_profile_trigger.sql
 supabase/migrations/0004_production_features.sql
+supabase/migrations/0005_harden_oauth_profile_trigger.sql
 ```
 
 Migration `0004` creates the public `writing-covers` bucket with a 5 MB limit,
 restricts uploads and deletes to administrators, and adds the scheduled-post index.
+Migration `0005` makes OAuth profile creation more tolerant so a profile edge case
+does not block Google sign-in.
 
 ### Administrator account
 
