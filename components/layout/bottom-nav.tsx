@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   BookOpen,
+  CalendarDays,
   FileText,
   Home,
-  Map,
   Library,
   LibraryBig,
   Plus,
@@ -26,8 +26,8 @@ type NavItem = {
 const items: NavItem[] = [
   { href: '/', label: 'Home', icon: Library },
   { href: '/shelves', label: 'Shelves', icon: BookOpen },
+  { href: '/archive', label: 'Archive', icon: CalendarDays },
   { href: '/search', label: 'Search', icon: Search },
-  { href: '/atlas', label: 'Atlas', icon: Map },
   { href: '/account', label: 'You', icon: User },
 ];
 
