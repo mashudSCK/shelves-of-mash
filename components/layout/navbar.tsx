@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ExternalLink, ShieldCheck } from 'lucide-react';
+import { ExternalLink, ShieldCheck, User } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { DesktopNavLinks } from './desktop-nav-links';
 import { ThemeToggle } from './theme-toggle';
@@ -36,6 +36,13 @@ export function Navbar() {
               <ExternalLink className="h-4 w-4" aria-hidden="true" />
               <span className="hidden sm:inline">View site</span>
             </Link>
+            <Link
+              href="/account"
+              aria-label="Account"
+              className="hidden h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:flex"
+            >
+              <User className="h-4 w-4" aria-hidden="true" />
+            </Link>
             <ThemeToggle />
           </div>
         </div>
@@ -55,6 +62,13 @@ export function Navbar() {
         <DesktopNavLinks />
 
         <div className="flex items-center gap-1">
+          <Link
+            href="/account"
+            aria-label="Account"
+            className="hidden h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:flex"
+          >
+            <User className="h-4 w-4" aria-hidden="true" />
+          </Link>
           <ThemeToggle />
         </div>
       </div>
