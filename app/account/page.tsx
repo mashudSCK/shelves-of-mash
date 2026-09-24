@@ -52,6 +52,12 @@ export default async function AccountPage({
               Admin
             </Link>
           )}
+          <Link
+            href="/about"
+            className="rounded-md border border-border px-3 py-2 text-sm text-foreground transition-colors hover:border-accent hover:text-accent"
+          >
+            About
+          </Link>
           <SignOutButton />
         </div>
       </header>
