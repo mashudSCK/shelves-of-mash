@@ -3,11 +3,14 @@ import { notFound } from 'next/navigation';
 import { SpineShelfRow } from '@/components/shelves/spine';
 import { WritingCard } from '@/components/writing/writing-card';
 import { getShelfBySlug, getWritingsByShelf } from '@/lib/data/writings';
+import { Pagination } from '@/components/layout/pagination';
+import { parsePage, PUBLIC_PAGE_SIZE } from '@/lib/pagination';
 
 export const dynamic = 'force-dynamic';
 
 type ShelfPageProps = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string | string[] }>;
 };
 
 export async function generateMetadata({
@@ -22,12 +25,13 @@ export async function generateMetadata({
   };
 }
 
-export default async function ShelfPage({ params }: ShelfPageProps) {
+export default async function ShelfPage({ params, searchParams }: ShelfPageProps) {
   const { slug } = await params;
   const shelf = await getShelfBySlug(slug);
   if (!shelf) notFound();
 
-  const writings = await getWritingsByShelf(slug);
+  const page = parsePage((await searchParams).page);
+  const { writings, total } = await getWritingsByShelf(slug, page);
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-10 md:px-8">
@@ -40,13 +44,13 @@ export default async function ShelfPage({ params }: ShelfPageProps) {
           <p className="mt-3 text-muted-foreground">{shelf.description}</p>
         )}
         <p className="mt-2 text-2xs uppercase tracking-widest2 text-muted-foreground">
-          {writings.length} {writings.length === 1 ? 'writing' : 'writings'}
+          {total} {total === 1 ? 'writing' : 'writings'}
         </p>
       </header>
 
       {writings.length === 0 ? (
         <p className="text-muted-foreground">
-          This shelf is empty for now — come back soon.
+          {page > 1 ? 'No writings on this page.' : 'This shelf is empty for now — come back soon.'}
         </p>
       ) : (
         <>
@@ -61,6 +65,7 @@ export default async function ShelfPage({ params }: ShelfPageProps) {
           </div>
         </>
       )}
+      <Pagination page={page} totalPages={Math.max(1, Math.ceil(total / PUBLIC_PAGE_SIZE))} basePath={`/shelves/${slug}`} searchParams={{}} />
     </div>
   );
 }

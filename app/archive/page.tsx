@@ -3,6 +3,7 @@ import { ArchiveFilters } from '@/components/layout/archive-filters';
 import { Pagination } from '@/components/layout/pagination';
 import { WritingCard } from '@/components/writing/writing-card';
 import { getArchiveWritings, getArchiveYears, getShelves } from '@/lib/data/writings';
+import { parsePage, PUBLIC_PAGE_SIZE } from '@/lib/pagination';
 
 export const metadata: Metadata = {
   title: 'Archive',
@@ -11,29 +12,30 @@ export const metadata: Metadata = {
 
 export const revalidate = 120;
 
-const PAGE_SIZE = 12;
-
 export default async function ArchivePage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; shelf?: string; tag?: string; page?: string }>;
+  searchParams: Promise<{ year?: string | string[]; shelf?: string | string[]; tag?: string | string[]; page?: string | string[] }>;
 }) {
   const resolvedSearchParams = await searchParams;
-  const page = Math.max(1, Number(resolvedSearchParams.page ?? '1') || 1);
+  const page = parsePage(resolvedSearchParams.page);
+  const filters = {
+    year: typeof resolvedSearchParams.year === 'string' ? resolvedSearchParams.year : undefined,
+    shelf: typeof resolvedSearchParams.shelf === 'string' ? resolvedSearchParams.shelf : undefined,
+    tag: typeof resolvedSearchParams.tag === 'string' ? resolvedSearchParams.tag : undefined,
+  };
 
   const [{ writings, total }, years, shelves] = await Promise.all([
     getArchiveWritings({
-      year: resolvedSearchParams.year,
-      shelf: resolvedSearchParams.shelf,
-      tag: resolvedSearchParams.tag,
+      ...filters,
       page,
-      pageSize: PAGE_SIZE,
+      pageSize: PUBLIC_PAGE_SIZE,
     }),
     getArchiveYears(),
     getShelves(),
   ]);
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(total / PUBLIC_PAGE_SIZE));
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-10 md:px-8">
@@ -52,7 +54,7 @@ export default async function ArchivePage({
       </div>
 
       {writings.length === 0 ? (
-        <p className="text-muted-foreground">No writings match these filters.</p>
+        <p className="text-muted-foreground">{page > 1 ? 'No writings on this page match these filters.' : 'No writings match these filters.'}</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {writings.map((w, index) => (
@@ -65,7 +67,7 @@ export default async function ArchivePage({
         page={page}
         totalPages={totalPages}
         basePath="/archive"
-        searchParams={resolvedSearchParams}
+        searchParams={filters}
       />
     </div>
   );

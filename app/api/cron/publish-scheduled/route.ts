@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
+import { invalidatePublicContent } from '@/lib/data/public-cache';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
@@ -24,6 +25,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Publication failed' }, { status: 500 });
   }
 
+  invalidatePublicContent();
   revalidatePath('/');
   revalidatePath('/archive');
   revalidatePath('/shelves');

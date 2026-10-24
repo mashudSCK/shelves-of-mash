@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { invalidatePublicContent } from '@/lib/data/public-cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/auth/require-admin';
@@ -129,6 +130,7 @@ async function resolveCover(
 }
 
 function revalidateWritingPaths(slug?: string) {
+  invalidatePublicContent();
   revalidatePath('/');
   revalidatePath('/archive');
   revalidatePath('/shelves');
