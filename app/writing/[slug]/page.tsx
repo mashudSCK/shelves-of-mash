@@ -8,6 +8,8 @@ import { BookmarkButton } from '@/components/writing/bookmark-button';
 import { ShareButton } from '@/components/writing/share-button';
 import { AiSummaryCard } from '@/components/writing/ai-summary-card';
 import { ViewTracker } from '@/components/writing/view-tracker';
+import { ReadingTools } from '@/components/writing/reading-tools';
+import { siteUrl } from '@/lib/site';
 import { WritingCard } from '@/components/writing/writing-card';
 import { Section } from '@/components/layout/section';
 import { renderMarkdown } from '@/lib/markdown';
@@ -61,7 +63,7 @@ export default async function WritingPage({ params }: WritingPageProps) {
   ]);
 
   const { html, toc } = renderMarkdown(writing.content);
-  const shareUrl = `https://shelvesofmash.com/writing/${writing.slug}`;
+  const shareUrl = siteUrl(`/writing/${writing.slug}`);
 
   return (
     <article className="animate-fade-settle">
@@ -135,7 +137,7 @@ export default async function WritingPage({ params }: WritingPageProps) {
               </div>
             )}
 
-            <div className="prose-shelf">{html}</div>
+            <ReadingTools slug={writing.slug}>{html}</ReadingTools>
 
             <div className="mt-10">
               <AiSummaryCard summary={aiSummary} />

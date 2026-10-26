@@ -1,8 +1,9 @@
+import { siteUrl } from '@/lib/site';
 import type { MetadataRoute } from 'next';
 import { createPublicClient } from '@/lib/supabase/public';
 import { publicRead } from '@/lib/data/public-cache';
 
-export const SITE_URL = 'https://shelvesofmash.com';
+export const SITE_URL = siteUrl();
 const SITEMAP_SIZE = 50_000;
 const STATIC: MetadataRoute.Sitemap = [
   { url: SITE_URL, changeFrequency: 'daily', priority: 1 },
