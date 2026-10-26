@@ -2,6 +2,11 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function proxy(request: NextRequest) {
+  const hasSession = request.cookies.getAll().some(({ name }) =>
+    /^sb-.+-auth-token(?:\.\d+)?$/.test(name)
+  );
+  if (!hasSession) return NextResponse.next();
+
   let response = NextResponse.next({
     request: { headers: request.headers },
   });

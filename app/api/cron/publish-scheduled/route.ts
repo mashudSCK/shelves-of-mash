@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
+import { invalidatePublicContent } from '@/lib/data/public-cache';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { recordOperationalEvent } from '@/lib/monitoring';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +12,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const started = performance.now();
+  try {
   const supabase = createAdminClient();
   const now = new Date().toISOString();
   const { data, error } = await supabase
@@ -20,14 +24,20 @@ export async function GET(request: Request) {
     .select('id, slug');
 
   if (error) {
-    console.error('Scheduled publication failed', error);
+    await recordOperationalEvent({ kind: 'publishing', name: 'publish_scheduled', status: 'error', durationMs: performance.now() - started, detail: 'database_failed' });
     return NextResponse.json({ error: 'Publication failed' }, { status: 500 });
   }
 
+  invalidatePublicContent();
   revalidatePath('/');
   revalidatePath('/archive');
   revalidatePath('/shelves');
   for (const writing of data ?? []) revalidatePath(`/writing/${writing.slug}`);
 
+  await recordOperationalEvent({ kind: 'publishing', name: 'publish_scheduled', status: 'ok', durationMs: performance.now() - started });
   return NextResponse.json({ published: data?.length ?? 0 });
+  } catch {
+    await recordOperationalEvent({ kind: 'publishing', name: 'publish_scheduled', status: 'error', durationMs: performance.now() - started, detail: 'job_failed' });
+    return NextResponse.json({ error: 'Publication failed' }, { status: 500 });
+  }
 }

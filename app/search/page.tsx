@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Search as SearchIcon } from 'lucide-react';
 import { WritingCard } from '@/components/writing/writing-card';
 import { getWritingsByTag, searchWritings } from '@/lib/data/writings';
+import { Pagination } from '@/components/layout/pagination';
+import { parsePage, PUBLIC_PAGE_SIZE } from '@/lib/pagination';
 
 export const metadata: Metadata = {
   title: 'Search',
@@ -11,15 +13,17 @@ export const metadata: Metadata = {
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; tag?: string }>;
+  searchParams: Promise<{ q?: string | string[]; tag?: string | string[]; page?: string | string[] }>;
 }) {
-  const { q, tag } = await searchParams;
-  const query = q?.trim() ?? '';
-  const results = query
-    ? await searchWritings(query)
+  const params = await searchParams;
+  const query = typeof params.q === 'string' ? params.q.trim() : '';
+  const tag = typeof params.tag === 'string' ? params.tag : undefined;
+  const page = parsePage(params.page);
+  const { writings: results, total } = query
+    ? await searchWritings(query, page)
     : tag
-      ? await getWritingsByTag(tag)
-      : [];
+      ? await getWritingsByTag(tag, page)
+      : { writings: [], total: 0 };
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-10 md:px-8">
@@ -52,14 +56,14 @@ export default async function SearchPage({
 
       {(query || tag) && (
         <p className="mb-6 text-sm text-muted-foreground">
-          {results.length} {results.length === 1 ? 'result' : 'results'} for{' '}
+          {total} {total === 1 ? 'result' : 'results'} for{' '}
           {query ? <>&ldquo;{query}&rdquo;</> : <>tag #{tag}</>}
         </p>
       )}
 
       {(query || tag) && results.length === 0 && (
         <p className="text-muted-foreground">
-          Nothing on the shelves matches that yet. Try a different word or phrase.
+          {page > 1 ? 'No results on this page. Try a previous page.' : 'Nothing on the shelves matches that yet. Try a different word or phrase.'}
         </p>
       )}
 
@@ -68,6 +72,7 @@ export default async function SearchPage({
           <WritingCard key={w.id} writing={w} priority={index === 0} />
         ))}
       </div>
+      {(query || tag) && <Pagination page={page} totalPages={Math.max(1, Math.ceil(total / PUBLIC_PAGE_SIZE))} basePath="/search" searchParams={{ q: query, tag }} />}
     </div>
   );
 }

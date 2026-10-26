@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { invalidatePublicContent } from '@/lib/data/public-cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/auth/require-admin';
@@ -33,6 +34,8 @@ export async function createShelf(formData: FormData): Promise<void> {
 
   if (error) redirect('/admin/shelves?error=create_failed');
 
+  invalidatePublicContent();
+
   revalidatePath('/admin/shelves');
   revalidatePath('/shelves');
   redirect('/admin/shelves?saved=created');
@@ -49,6 +52,7 @@ export async function deleteShelf(shelfId: string): Promise<void> {
 
   const { error } = await supabase.from('shelves').delete().eq('id', shelfId);
   if (error) redirect('/admin/shelves?error=delete_failed');
+  invalidatePublicContent();
   revalidatePath('/admin/shelves');
   revalidatePath('/shelves');
   redirect('/admin/shelves?saved=deleted');

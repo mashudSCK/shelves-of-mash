@@ -32,3 +32,38 @@ test('protected admin route redirects signed-out visitors', async ({ page }) => 
   await expect(page).toHaveURL(/\/login\?next=%2Fadmin|\/login\?next=\/admin/);
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
 });
+
+test('shelf pagination preserves total and page size', async ({ page }) => {
+  test.skip(process.env.PLAYWRIGHT_FIXTURES !== '1', 'Requires isolated volume fixture');
+  await page.goto('/shelves/philosophy');
+  await expect(page.getByText('1205 writings', { exact: true })).toBeVisible();
+  const cards = page.locator('h3');
+  await expect(cards).toHaveCount(12);
+  const firstTitle = await cards.first().innerText();
+  await page.getByRole('link', { name: 'Next page' }).click();
+  await expect(page).toHaveURL(/page=2/);
+  await expect(cards).toHaveCount(12);
+  await expect(cards.first()).not.toHaveText(firstTitle);
+  await expect(page.getByRole('link', { name: 'Previous page' })).toBeVisible();
+});
+
+test('archive applies tag filter before counting and paginating', async ({ page }, testInfo) => {
+  test.skip(process.env.PLAYWRIGHT_FIXTURES !== '1', 'Requires isolated volume fixture');
+  await page.goto('/archive?tag=rare');
+  const timing = await page.evaluate(() => { const n = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming; return { ttfb: n.responseStart - n.requestStart, duration: n.duration }; });
+  console.log(`${testInfo.project.name} archive fixture navigation: ${JSON.stringify(timing)}`);
+  await expect(page.getByText('Page 1 of 51', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Next page' }).click();
+  await expect(page).toHaveURL(/tag=rare.*page=2/);
+  await expect(page.getByText('Page 2 of 51', { exact: true })).toBeVisible();
+});
+
+test('sitemap exposes writings beyond provider row limit', async ({ request }) => {
+  test.skip(process.env.PLAYWRIGHT_FIXTURES !== '1', 'Requires isolated volume fixture');
+  const index = await request.get('/sitemap.xml');
+  expect(await index.text()).toContain('/sitemap.xml?page=0');
+  const chunk = await request.get('/sitemap.xml?page=0');
+  const xml = await chunk.text();
+  expect((xml.match(/<url>/g) ?? []).length).toBe(1210);
+  expect(xml).toContain('/writing/writing-1205');
+});

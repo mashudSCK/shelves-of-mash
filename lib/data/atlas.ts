@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/public';
+import { publicRead } from '@/lib/data/public-cache';
 
 export type AtlasNode = {
   id: string;
@@ -10,19 +11,16 @@ export type AtlasNode = {
 
 export type AtlasEdge = { source: string; target: string };
 
-export async function getAtlasData(): Promise<{ nodes: AtlasNode[]; edges: AtlasEdge[] }> {
-  const supabase = await createClient();
+export const getAtlasData = publicRead('atlas', async (): Promise<{ nodes: AtlasNode[]; edges: AtlasEdge[] }> => {
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from('writings')
     .select('id, slug, title, shelf:shelves(id, slug, name), tags:writing_tags(tag:tags(id, slug, name))')
     .eq('status', 'published')
-    .order('published_at', { ascending: false })
+    .order('published_at', { ascending: false }).order('id', { ascending: false })
     .limit(30);
 
-  if (error || !data) {
-    console.error('getAtlasData error', error);
-    return { nodes: [], edges: [] };
-  }
+  if (error) throw error;
 
   const nodes = new Map<string, AtlasNode>();
   const edges: AtlasEdge[] = [];
@@ -38,7 +36,7 @@ export async function getAtlasData(): Promise<{ nodes: AtlasNode[]; edges: Atlas
     if (targetNode) targetNode.connections++;
   };
 
-  for (const row of data as any[]) {
+  for (const row of (data ?? []) as any[]) {
     const writingId = `writing:${row.id}`;
     addNode({ id: writingId, label: row.title, kind: 'writing', href: `/writing/${row.slug}` });
 
@@ -58,4 +56,4 @@ export async function getAtlasData(): Promise<{ nodes: AtlasNode[]; edges: Atlas
   }
 
   return { nodes: Array.from(nodes.values()), edges };
-}
+});

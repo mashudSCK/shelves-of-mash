@@ -6,6 +6,8 @@ import { archiveWriting, deleteWriting, restoreWriting } from '@/lib/actions/wri
 import { formatRelative } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { WritingStatus } from '@/types/database';
+import { Pagination } from '@/components/layout/pagination';
+import { parsePage, ADMIN_PAGE_SIZE } from '@/lib/pagination';
 
 const TABS: { key: WritingStatus; label: string }[] = [
   { key: 'published', label: 'Published' },
@@ -17,13 +19,14 @@ const TABS: { key: WritingStatus; label: string }[] = [
 export default async function AdminWritingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; saved?: string; error?: string }>;
+  searchParams: Promise<{ status?: string | string[]; saved?: string | string[]; error?: string | string[]; page?: string | string[] }>;
 }) {
-  const { status: requestedStatus, saved, error } = await searchParams;
+  const { status: requestedStatus, saved, error, page: requestedPage } = await searchParams;
+  const page = parsePage(requestedPage);
   const status = TABS.some((tab) => tab.key === requestedStatus)
     ? (requestedStatus as WritingStatus)
     : 'published';
-  const writings = await getWritingsByStatus(status);
+  const { writings, total } = await getWritingsByStatus(status, page);
 
   return (
     <div>
@@ -74,7 +77,7 @@ export default async function AdminWritingsPage({
       </div>
 
       {writings.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No writings here yet.</p>
+        <p className="text-sm text-muted-foreground">{page > 1 ? 'No writings on this page. Try a previous page.' : 'No writings here yet.'}</p>
       ) : (
         <ul className="divide-y divide-border rounded-md border border-border bg-surface">
           {writings.map((w) => (
@@ -132,6 +135,7 @@ export default async function AdminWritingsPage({
           ))}
         </ul>
       )}
+      <Pagination page={page} totalPages={Math.max(1, Math.ceil(total / ADMIN_PAGE_SIZE))} basePath="/admin/writings" searchParams={{ status }} />
     </div>
   );
 }

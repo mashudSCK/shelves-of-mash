@@ -7,6 +7,9 @@ import { ShelfMark } from '@/components/writing/shelf-mark';
 import { BookmarkButton } from '@/components/writing/bookmark-button';
 import { ShareButton } from '@/components/writing/share-button';
 import { AiSummaryCard } from '@/components/writing/ai-summary-card';
+import { ViewTracker } from '@/components/writing/view-tracker';
+import { ReadingTools } from '@/components/writing/reading-tools';
+import { siteUrl } from '@/lib/site';
 import { WritingCard } from '@/components/writing/writing-card';
 import { Section } from '@/components/layout/section';
 import { renderMarkdown } from '@/lib/markdown';
@@ -16,7 +19,6 @@ import {
   getRelatedWritings,
   getAiSummary,
   getBookmarkStatus,
-  incrementViewCount,
 } from '@/lib/data/writings';
 import { createClient } from '@/lib/supabase/server';
 
@@ -60,14 +62,12 @@ export default async function WritingPage({ params }: WritingPageProps) {
     getBookmarkStatus(writing.id),
   ]);
 
-  // Fire-and-forget; doesn't block the response.
-  incrementViewCount(writing.id);
-
   const { html, toc } = renderMarkdown(writing.content);
-  const shareUrl = `https://shelvesofmash.com/writing/${writing.slug}`;
+  const shareUrl = siteUrl(`/writing/${writing.slug}`);
 
   return (
     <article className="animate-fade-settle">
+      <ViewTracker writingId={writing.id} />
       {writing.cover_image_url && (
         <div className="relative aspect-[16/9] w-full overflow-hidden md:aspect-[21/9]">
           <Image
@@ -137,7 +137,7 @@ export default async function WritingPage({ params }: WritingPageProps) {
               </div>
             )}
 
-            <div className="prose-shelf">{html}</div>
+            <ReadingTools slug={writing.slug}>{html}</ReadingTools>
 
             <div className="mt-10">
               <AiSummaryCard summary={aiSummary} />
