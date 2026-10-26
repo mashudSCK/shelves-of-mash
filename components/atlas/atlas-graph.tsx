@@ -38,7 +38,7 @@ export function AtlasGraph({ nodes, edges }: { nodes: AtlasNode[]; edges: AtlasE
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
       <div className="overflow-x-auto rounded-md border border-border bg-surface" aria-label="Relationship map">
-        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="h-[32rem] min-w-[52rem] w-full" role="img" aria-labelledby="atlas-title atlas-desc">
+        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="h-[32rem] min-w-[52rem] w-full" role="group" aria-labelledby="atlas-title atlas-desc">
           <title id="atlas-title">Writing relationship atlas</title>
           <desc id="atlas-desc">Shelves connect to writings, and writings connect to their tags.</desc>
           {edges.map((edge) => {
@@ -67,17 +67,21 @@ export function AtlasGraph({ nodes, edges }: { nodes: AtlasNode[]; edges: AtlasE
                 transform={`translate(${position.x} ${position.y})`}
                 role="button"
                 tabIndex={0}
+                aria-pressed={selectedNode}
                 aria-label={`${node.kind}: ${node.label}, ${node.connections} connections`}
                 onClick={() => setSelectedId(node.id)}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') setSelectedId(node.id);
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    setSelectedId(node.id);
+                  }
                 }}
-                className="cursor-pointer outline-none"
+                className="group cursor-pointer outline-none"
               >
                 <circle
                   r={node.kind === 'writing' ? 9 : 7}
                   className={cn(
-                    'transition-colors',
+                    'transition-colors group-focus-visible:stroke-accent group-focus-visible:stroke-[3px]',
                     selectedNode ? 'fill-accent' : node.kind === 'shelf' ? 'fill-primary' : node.kind === 'writing' ? 'fill-foreground' : 'fill-muted-foreground'
                   )}
                 />
@@ -99,6 +103,19 @@ export function AtlasGraph({ nodes, edges }: { nodes: AtlasNode[]; edges: AtlasE
       </div>
 
       <aside className="rounded-md border border-border bg-surface p-5" aria-live="polite">
+        <details className="mb-5 border-b border-border pb-3">
+          <summary className="min-h-11 cursor-pointer py-3 text-sm">Browse map connections</summary>
+          <ul className="max-h-64 overflow-y-auto">
+            {nodes.map(node => (
+              <li key={node.id}>
+                <button type="button" aria-pressed={selectedId === node.id} onClick={() => setSelectedId(node.id)}
+                  className="min-h-11 w-full break-words py-2 text-left text-sm text-foreground aria-pressed:underline">
+                  {node.label} <span className="text-muted-foreground">({node.kind})</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
         {selected ? (
           <>
             <p className="text-2xs uppercase tracking-widest2 text-accent">{selected.kind}</p>

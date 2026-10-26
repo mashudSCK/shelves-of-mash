@@ -9,6 +9,9 @@
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
     "test:e2e": "playwright test",
+    "test:regression": "node tests/run-regressions.mjs",
+    "test:e2e:fixtures": "node tests/run-fixtures.mjs e2e",
+    "build:fixtures": "node tests/run-fixtures.mjs build",
     "test:e2e:install": "playwright install chromium"
   },
   "dependencies": {
@@ -26,7 +29,7 @@
     "date-fns": "^3.6.0",
     "framer-motion": "^11.3.24",
     "lucide-react": "^0.427.0",
-    "next": "^16.3.6",
+    "next": "^16.4.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
@@ -36,6 +39,7 @@
     "tailwind-merge": "^2.5.2"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.11",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/typography": "^0.5.14",
     "@types/node": "^20.14.15",
@@ -43,7 +47,7 @@
     "@types/react-dom": "^19.2.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.3.6",
+    "eslint-config-next": "^16.4.3",
     "postcss": "^8.5.28",
     "tailwindcss": "^3.4.10",
     "tailwindcss-animate": "^1.0.7",

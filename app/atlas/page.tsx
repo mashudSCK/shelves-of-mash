@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { AtlasGraph } from '@/components/atlas/atlas-graph';
 import { getAtlasData } from '@/lib/data/atlas';
 
@@ -20,6 +21,10 @@ export default async function AtlasPage() {
         <p className="mt-3 text-muted-foreground">
           Follow the paths between shelves, writings, and recurring themes.
         </p>
+        <p className="mt-3 text-sm text-muted-foreground">The map shows the latest 30 published writings.</p>
+        <Link href="/archive" className="mt-2 inline-flex min-h-11 items-center text-sm text-accent underline underline-offset-4">
+          Browse the complete archive
+        </Link>
       </header>
       {nodes.length > 0 ? (
         <AtlasGraph nodes={nodes} edges={edges} />

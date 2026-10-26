@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { invalidatePublicContent } from '@/lib/data/public-cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/auth/require-admin';
@@ -129,6 +130,7 @@ async function resolveCover(
 }
 
 function revalidateWritingPaths(slug?: string) {
+  invalidatePublicContent();
   revalidatePath('/');
   revalidatePath('/archive');
   revalidatePath('/shelves');
@@ -259,20 +261,22 @@ export async function deleteWriting(writingId: string): Promise<void> {
 export async function archiveWriting(writingId: string): Promise<void> {
   await requireAdmin();
   const supabase = await createClient();
-  await supabase
+  const { error } = await supabase
     .from('writings')
     .update({ status: 'archived', scheduled_for: null })
     .eq('id', writingId);
+  if (error) redirect('/admin/writings?error=archive_failed');
   revalidateWritingPaths();
 }
 
 export async function restoreWriting(writingId: string): Promise<void> {
   await requireAdmin();
   const supabase = await createClient();
-  await supabase
+  const { error } = await supabase
     .from('writings')
     .update({ status: 'draft', scheduled_for: null })
     .eq('id', writingId);
+  if (error) redirect('/admin/writings?status=archived&error=restore_failed');
   revalidateWritingPaths();
 }
 

@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { localDestination } from '@/lib/auth/local-destination';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const requestedNext = searchParams.get('next') ?? '/';
-  const next = requestedNext.startsWith('/') && !requestedNext.startsWith('//')
-    ? requestedNext
-    : '/';
+  const next = localDestination(searchParams.get('next'));
 
   if (code) {
     const supabase = await createClient();

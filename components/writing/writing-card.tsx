@@ -9,10 +9,12 @@ export function WritingCard({
   writing,
   className,
   priority = false,
+  excerpt,
 }: {
   writing: WritingCardData;
   className?: string;
   priority?: boolean;
+  excerpt?: string;
 }) {
   const shelfName = writing.shelf?.name ?? 'Shelf';
 
@@ -56,6 +58,7 @@ export function WritingCard({
         {writing.subtitle && (
           <p className="line-clamp-2 text-sm text-muted-foreground">{writing.subtitle}</p>
         )}
+        {excerpt && <p className="line-clamp-3 text-sm text-muted-foreground">{excerpt}</p>}
         <div className="mt-auto flex items-center gap-2 pt-2 text-2xs text-muted-foreground">
           <span>{formatPublishedDate(writing.published_at)}</span>
           <span aria-hidden="true">·</span>

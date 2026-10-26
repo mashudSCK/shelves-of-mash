@@ -15,14 +15,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window === 'undefined') return 'light';
 
-    const stored = window.localStorage.getItem('shelves-theme') as Theme | null;
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    return stored ?? (prefersDark ? 'dark' : 'light');
+    try {
+      const stored = window.localStorage.getItem('shelves-theme');
+      if (stored === 'light' || stored === 'dark') return stored;
+    } catch { /* Device storage is optional; reading must remain available. */ }
+    return prefersDark ? 'dark' : 'light';
   });
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
-    window.localStorage.setItem('shelves-theme', theme);
+    try { window.localStorage.setItem('shelves-theme', theme); } catch { /* Keep the current in-memory theme. */ }
   }, [theme]);
 
   function toggleTheme() {

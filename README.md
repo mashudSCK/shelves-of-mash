@@ -29,6 +29,7 @@ Tailwind CSS, and Supabase.
 Copy `.env.example` to `.env.local` and provide:
 
 ```ini
+NEXT_PUBLIC_SITE_URL=https://your-production-domain.example
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-publishable-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
@@ -49,12 +50,45 @@ supabase/migrations/0002_seed_shelves.sql
 supabase/migrations/0003_fix_new_user_profile_trigger.sql
 supabase/migrations/0004_production_features.sql
 supabase/migrations/0005_harden_oauth_profile_trigger.sql
+supabase/migrations/0006_unique_writing_views.sql
+supabase/migrations/0007_scalable_reads.sql
+supabase/migrations/0008_editorial_search.sql
+supabase/migrations/0009_operational_events.sql
 ```
 
 Migration `0004` creates the public `writing-covers` bucket with a 5 MB limit,
 restricts uploads and deletes to administrators, and adds the scheduled-post index.
 Migration `0005` makes OAuth profile creation more tolerant so a profile edge case
 does not block Google sign-in.
+
+Migration `0006` counts each writing once per signed-in account, or once per
+signed-out browser identity stored in localStorage. Recording occurs after the
+writing mounts in the browser, so server rendering and link prefetch do not add
+views. Database uniqueness prevents repeated or concurrent requests from counting twice.
+Clearing browser storage, switching browsers, or reading anonymously and then signing
+in can create separate identities; account-based deduplication persists across devices.
+Anonymous recording requires browser storage and Web Locks support; without them,
+only signed-in views are recorded, avoiding unstable identities and duplicate counts.
+
+Apply `0006` before deploying the updated app. Existing view totals and raw events
+are preserved; historical signed-in readers are backfilled into the deduplication
+registry. Historical anonymous readers cannot be reconstructed. This prevents new
+duplicates rather than correcting inflated historical totals. Older application
+versions retain the one-argument RPC, with signed-in deduplication; anonymous views
+from those versions are skipped until the updated app is deployed.
+
+Rollback the application first if necessary. Leave migration `0006` installed to
+retain deduplication data and compatible RPCs; no destructive down migration is required.
+
+The focused database regression runs with a scratch installation of PGlite:
+
+```powershell
+npm.cmd install --prefix "$env:TEMP/shelves-view-regression" --no-save --package-lock=false @electric-sql/pglite
+node tests/view-count.mjs "$env:TEMP/shelves-view-regression/node_modules/@electric-sql/pglite/dist/index.js"
+node tests/view-tracker.mjs
+```
+
+It uses an isolated in-memory PostgreSQL fixture and never connects to production.
 
 ### Administrator account
 
@@ -160,3 +194,84 @@ navigation, overflow, Search, Atlas, and signed-out admin protection.
 Supabase Row Level Security remains the authorization boundary. Admin layouts and
 server actions also call `requireAdmin()` to fail early and provide a clearer user
 experience, while database policies protect the underlying data and Storage objects.
+
+## Scalability
+
+Public collections use 12-item pages; administrator lists use 20-item pages. Stable
+ID tie-breakers preserve page ordering for an unchanged archive. Tags and shelves
+filter in Postgres before pagination and exact counts. Bookmark pages remain private;
+administrator lists omit Markdown bodies.
+
+Apply `supabase/migrations/0007_scalable_reads.sql` before deploying these readers.
+It adds complete database aggregates and four query-backed composite indexes. Existing
+records and RPCs remain intact. Roll back the application without dropping the additive
+migration. Index creation can briefly block writes; schedule the migration appropriately.
+Migration 0007 was applied transactionally through SQL Editor to hosted project
+`yibmiujhbdpufcpogeam` on 2026-10-24. Functions, indexes, grants, and unchanged totals
+were verified. Application deployment remains pending.
+
+Only anonymous published-content reads enter the shared 120-second cache. Writes,
+unpublishing, shelf changes, and scheduled publishing explicitly expire the public tag.
+Sessions, roles, previews, and bookmarks are not shared. Failed reads throw instead of
+caching an empty archive. The normal TTL permits background revalidation; it is not a
+strict maximum age during outages.
+
+`/sitemap.xml` indexes root-scoped `/sitemap.xml?page=N` chunks, each at most 50,000
+URLs, read in 500-row batches. This avoids provider row-limit truncation. Ordering is
+stable for unchanged data; concurrent edits can shift pages until regeneration.
+
+Reproducible isolated checks:
+
+```powershell
+npm.cmd run test:regression
+npm.cmd run test:e2e:fixtures
+npm.cmd run build:fixtures
+```
+
+The browser fixture serves 1,205 writings locally and overrides Supabase variables only
+for its child app process. It never contacts hosted Supabase. SQL tests use 20,000 writings
+and 20,000 bookmarks in an isolated PostgreSQL/WASM database. Measured plans/timings and
+remaining linear operations are documented in `docs/performance/scalability-db.md`.
+These measurements do not establish a production traffic capacity.
+
+Historical memory identifies hosted project `yibmiujhbdpufcpogeam` and reports that local
+environment configuration pointed elsewhere. Reverify the endpoint and matching keys before
+live integration or deployment. A build against the old project fails until migration
+0007 exists there; do not conceal this by substituting empty data. Synthetic fixture builds
+verify compilation and prerendering without changing credentials or production data.
+
+## Reading, search, and operational improvements
+
+Search uses the published-only ranked RPC from migration 0008, with bounded plain-text
+excerpts rendered by React. Migration 0008 also stops view increments from changing
+editorial timestamps. Migration 0009 adds private operational events. Apply and verify
+the required migrations before deploying this code; their hosted status was not checked
+in the 2026-10-26 implementation session.
+
+`NEXT_PUBLIC_SITE_URL` supplies metadata, share URLs, robots and sitemaps. Set it to the
+actual production origin. `VERCEL_PROJECT_PRODUCTION_URL` is the fallback before the
+repository's default URL. Authentication still returns to a validated local destination
+on the requesting origin, so preview/local sign-in stays usable.
+
+Reading settings save optional font-size and reading-position preferences on the device.
+Restoring a position requires a reader action. Reading and theme switching remain available
+when storage is disabled. Atlas explains its latest-30-writing scope and offers an accessible
+connection list plus access to the complete archive. Sharing failures provide recovery text.
+
+Public database reads record static error codes and cache-miss reads taking at least one
+second. Cron jobs record success/failure. `/admin/health` shows the latest 50 private events;
+an empty history is not a service-health guarantee. Monitoring writes and webhooks have
+1.5-second timeouts and exclude request URLs, credentials, search text, and writing content.
+Choose a retention policy for operational events before sustained production use.
+
+The fixture suite exercises real application actions with synthetic accounts and backend
+responses on loopback ports 3100/4380. It overrides all backend/job/webhook settings and
+never writes hosted data. Fixture image optimization is disabled only when
+`PLAYWRIGHT_FIXTURES=1`; leave that variable unset in production. The separate SQL suite
+uses the development-only PGlite dependency to check real PostgreSQL policies/functions.
+Its archive-data recovery proof restores into a second isolated database; it excludes
+Auth users and Storage bytes and is not a full disaster-recovery backup.
+
+GitHub Actions runs regression, lint, build, type, responsive-browser, and production
+dependency-audit checks. See [security threat model](docs/security/shelves-of-mash-threat-model.md)
+and [implementation results](docs/improvement-results.md) for evidence and remaining limits.

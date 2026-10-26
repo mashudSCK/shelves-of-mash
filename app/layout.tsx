@@ -1,3 +1,4 @@
+import { siteUrl } from '@/lib/site';
 import type { Metadata, Viewport } from 'next';
 import { Fraunces, Source_Serif_4, JetBrains_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/layout/theme-provider';
@@ -26,7 +27,7 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://shelvesofmash.com'),
+  metadataBase: new URL(siteUrl()),
   title: {
     default: 'The Shelves of Mash',
     template: '%s · The Shelves of Mash',

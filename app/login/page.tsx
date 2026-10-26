@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { localDestination } from '@/lib/auth/local-destination';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -10,7 +11,7 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [cooldown, setCooldown] = useState(0);
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') ?? '/';
+  const next = localDestination(searchParams.get('next'));
   const callbackError = searchParams.get('error');
   const reason = searchParams.get('reason');
 

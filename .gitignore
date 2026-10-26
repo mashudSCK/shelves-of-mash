@@ -23,3 +23,6 @@ next-env.d.ts
 
 # logs
 npm-debug.log*
+.*-regression.log
+/playwright-report/
+/test-results/

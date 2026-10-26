@@ -14,6 +14,8 @@ const nextConfig = {
     ];
   },
   images: {
+    // The isolated browser fixture serves local cover bytes without the optimizer.
+    unoptimized: process.env.PLAYWRIGHT_FIXTURES === '1',
     remotePatterns: [
       {
         protocol: 'https',

@@ -21,7 +21,7 @@ export async function toggleBookmark(writingId: string): Promise<{ bookmarked: b
   if (existing) {
     const { error } = await supabase.from('bookmarks').delete().eq('id', existing.id);
     if (error) return { error: error.message };
-    revalidatePath('/account/bookmarks');
+    revalidatePath('/account');
     return { bookmarked: false };
   }
 
@@ -30,6 +30,6 @@ export async function toggleBookmark(writingId: string): Promise<{ bookmarked: b
     .insert({ user_id: user.id, writing_id: writingId });
 
   if (error) return { error: error.message };
-  revalidatePath('/account/bookmarks');
+  revalidatePath('/account');
   return { bookmarked: true };
 }

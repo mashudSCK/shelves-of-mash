@@ -4,13 +4,16 @@ import { createClient } from '@/lib/supabase/server';
 import { getBookmarkedWritings } from '@/lib/data/bookmarks';
 import { WritingCard } from '@/components/writing/writing-card';
 import { SignOutButton } from '@/components/layout/sign-out-button';
+import { Pagination } from '@/components/layout/pagination';
+import { parsePage, PUBLIC_PAGE_SIZE } from '@/lib/pagination';
 
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string | string[]; page?: string | string[] }>;
 }) {
-  const { error } = await searchParams;
+  const { error, page: requestedPage } = await searchParams;
+  const page = parsePage(requestedPage);
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -24,7 +27,7 @@ export default async function AccountPage({
     .eq('id', user.id)
     .single();
 
-  const bookmarks = await getBookmarkedWritings();
+  const { writings: bookmarks, total } = await getBookmarkedWritings(page);
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-10 md:px-8">
@@ -65,7 +68,7 @@ export default async function AccountPage({
       <h2 className="mb-4 font-serif text-xl font-medium text-foreground">Bookmarks</h2>
       {bookmarks.length === 0 ? (
         <p className="text-muted-foreground">
-          Nothing saved yet — bookmark a writing and it will appear here.
+          {page > 1 ? 'No bookmarks on this page. Try a previous page.' : 'Nothing saved yet — bookmark a writing and it will appear here.'}
         </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -74,6 +77,7 @@ export default async function AccountPage({
           ))}
         </div>
       )}
+      <Pagination page={page} totalPages={Math.max(1, Math.ceil(total / PUBLIC_PAGE_SIZE))} basePath="/account" searchParams={{}} />
     </div>
   );
 }
